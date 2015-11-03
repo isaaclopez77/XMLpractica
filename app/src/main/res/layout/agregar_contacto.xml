@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/imageView3"
+        android:src="@drawable/icono"
+        android:layout_marginTop="10dp"
+        android:layout_weight="2" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Nuevo Contacto"
+        android:id="@+id/textView"
+        android:gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+        android:textStyle="bold"
+        android:layout_weight="1" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/etNombre"
+        android:hint="Nombre"
+        android:layout_marginTop="0dp"
+        android:layout_weight="0.5" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/etNumero"
+        android:layout_gravity="center_horizontal"
+        android:hint="Número"
+        android:layout_weight="0.5" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/etNumero2"
+        android:hint="Número 2"
+        android:layout_weight="0.5" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Guardar"
+        android:id="@+id/button"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="0.5"
+        android:onClick="guardarContacto" />
+</LinearLayout>
