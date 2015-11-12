@@ -1,6 +1,8 @@
 package com.example.usuario.xml;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -10,11 +12,13 @@ import android.os.Bundle;
 import android.util.Log;
 import android.util.Xml;
 import android.view.ContextMenu;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -35,8 +39,7 @@ public class Principal extends AppCompatActivity {
     private List<String> lTelefonos;
     private ListView lv;
     private Adaptador ad;
-    private Bundle b;
-    private Contacto nuevo;
+    private List<Contacto> nuevos;
 
     /************ @OVERRIDES *********************************/
 
@@ -61,24 +64,21 @@ public class Principal extends AppCompatActivity {
                 Toast.makeText(this,"Proyecto XML 2º DAM:\n Isaac López Delgado",Toast.LENGTH_SHORT).show();
                 break;
             case R.id.mnAdd:
-                Intent i = new Intent(this,ContactoNuevo.class);
-                b=i.getExtras();
-                /*if(b!=null){
-                    b.putSerializable("mismo",b.getSerializable("contacto"));
-                }*/
-                startActivity(i);
+                añadirContacto();
                 break;
             case R.id.mnCopiaS:
                 try {
-                    escribir();
+                    Log.v("COPIA","ha entrado");
+                    escribir(lContactos);
                     Toast.makeText(this,"Copia de seguridad creada: XML generado",Toast.LENGTH_SHORT).show();
                 }catch (IOException e){
+                    Toast.makeText(this,"Cnooooooooo",Toast.LENGTH_SHORT).show();
 
                 }
                 break;
             case R.id.mnCopiaI:
                 try {
-                    incremental();
+                    incremental(nuevos);
                     Toast.makeText(this,"Copia incremental creada",Toast.LENGTH_SHORT).show();
                 }catch (IOException e){
 
@@ -104,6 +104,12 @@ public class Principal extends AppCompatActivity {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
         if (item.getItemId() == R.id.mnBorrar) {
             lContactos.remove(info.position);
+        }else if(item.getItemId() == R.id.mnEditar){
+            try {
+                editar(info.position);
+            } catch (IOException e) {
+
+            }
         }
         ad.notifyDataSetChanged();
         return super.onContextItemSelected(item);
@@ -112,31 +118,14 @@ public class Principal extends AppCompatActivity {
     /***************** INIT() ********************************************/
 
     public void init() {
-
+        //Inicialicamos el array que recogera los contactos que se inserten
+        nuevos=new ArrayList<>();
         //Aquí se crea la lista de contactos con sus tlfns
         lContactos = getListaContactos(this);
         for(Contacto c : lContactos){
             long id = c.getId();
             lTelefonos = getListaTelefonos(this,id);
             c.setTelefonos(lTelefonos);
-        }
-
-        //Recibe el intent con el nuevo contacto
-        Intent i=this.getIntent();
-        b=i.getExtras();
-        /*if(b!=null){
-            Contacto nuevo = (Contacto)b.getSerializable("contacto");
-            lContactos.add(nuevo);
-
-            Contacto otro = (Contacto)b.getSerializable("mismo");
-            if(otro!=null){
-                lContactos.add(otro);
-            }
-
-        }*/
-        if(b!=null) {
-            nuevo = (Contacto) b.getSerializable("contacto");
-            lContactos.add(nuevo);
         }
 
         lv = (ListView)findViewById(R.id.lvMostrar);
@@ -148,7 +137,7 @@ public class Principal extends AppCompatActivity {
 
     /******************** XML ********************************************************/
 
-    public void escribir() throws IOException{
+    public void escribir(List<Contacto> x) throws IOException{
         FileOutputStream fosxml = new FileOutputStream(new File(getExternalFilesDir(null), "archivo.xml"));
         XmlSerializer docxml = Xml.newSerializer();
         docxml.setOutput(fosxml, "UTF-8");
@@ -156,10 +145,11 @@ public class Principal extends AppCompatActivity {
         docxml.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true);
 
         docxml.startTag(null, "contactos");
-        for (Contacto s : lContactos) {
+
+        for (Contacto s : x) {
             docxml.startTag(null, "contacto");
             docxml.startTag(null, "nombre");
-            docxml.attribute(null, "id", ""+s.getId());
+            docxml.attribute(null, "id", "" + s.getId());
             docxml.text(s.getNombre());
             docxml.endTag(null, "nombre");
             for (int i=0;i<s.size();i++) {
@@ -174,25 +164,28 @@ public class Principal extends AppCompatActivity {
         fosxml.close();
     }
 
-    public void incremental() throws IOException{
+    public void incremental(List<Contacto> nuevos) throws IOException{
         FileOutputStream fosxml = new FileOutputStream(new File(getExternalFilesDir(null), "incremental.xml"));
         XmlSerializer docxml = Xml.newSerializer();
         docxml.setOutput(fosxml, "UTF-8");
         docxml.startDocument(null, Boolean.valueOf(true));
         docxml.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true);
+
         docxml.startTag(null, "contactos");
-                docxml.startTag(null, "contacto");
-                docxml.startTag(null, "nombre");
-                docxml.attribute(null, "id", "" + nuevo.getId());
-                docxml.text(nuevo.getNombre());
-                docxml.endTag(null, "nombre");
-                for (int i=0;i<nuevo.size();i++) {
-                    docxml.startTag(null, "telefono");
-                    docxml.text(nuevo.getTelefono(i));
+
+        for (Contacto s : nuevos) {
+            docxml.startTag(null, "contacto");
+            docxml.startTag(null, "nombre");
+            docxml.attribute(null, "id", "" + s.getId());
+            docxml.text(s.getNombre());
+            docxml.endTag(null, "nombre");
+            for (int i=0;i<s.size();i++) {
+                docxml.startTag(null, "telefono");
+                docxml.text(s.getTelefono(i));
                 docxml.endTag(null, "telefono");
             }
             docxml.endTag(null, "contacto");
-
+        }
         docxml.endDocument();
         docxml.flush();
         fosxml.close();
@@ -238,4 +231,99 @@ public class Principal extends AppCompatActivity {
         return lista;
     }
     /****************************************************************************/
+    public void añadirContacto(){
+
+        AlertDialog.Builder alert= new AlertDialog.Builder(this);
+        alert.setTitle("Insertar");
+        LayoutInflater inflater= LayoutInflater.from(this);
+
+        final View vista = inflater.inflate(R.layout.dialogo_insertar_contacto, null);
+        alert.setView(vista);
+        alert.setPositiveButton("Insertar",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+
+                        long id = lContactos.size() - 1;
+                        EditText et1, et2;
+                        et1 = (EditText) vista.findViewById(R.id.etInsertarNombre);
+                        et2 = (EditText) vista.findViewById(R.id.etInsertarTelefono);
+
+                        List<String> telf = new ArrayList<>();
+                        telf.add(et2.getText().toString());
+
+                        Contacto c = new Contacto(et1.getText().toString(),id,telf);
+                        lContactos.add(c);
+                        nuevos.add(c);
+                        ad = new Adaptador(Principal.this, R.layout.elemento_lista, lContactos);
+                        ad.notifyDataSetChanged();
+                        lv.setAdapter(ad);
+                    }
+                });
+        alert.setNegativeButton("cancelar", null);
+        alert.show();
+
+    }
+
+    public void editar(final int posicion) throws IOException {
+        Log.v("EDITAR","1");
+        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        alert.setTitle("Editar contacto");
+        LayoutInflater inflater = LayoutInflater.from(this);
+        final View vista = inflater.inflate(R.layout.dialogo_editar_contacto, null);
+        final EditText etNome, etNume,etNume2,etNume3;
+        String nom, num="",num2="Añade un nuevo número",num3="Añade un nuevo número";
+
+        etNome=(EditText)vista.findViewById(R.id.etNome);
+        etNume=(EditText)vista.findViewById(R.id.etNume);
+        etNume2=(EditText)vista.findViewById(R.id.etNume2);
+        etNume3=(EditText)vista.findViewById(R.id.etNume3);
+
+        nom = lContactos.get(posicion).getNombre();
+        if(lContactos.get(posicion).size()<2) {
+            num = lContactos.get(posicion).getTelefono(0);
+        }else {
+            if(lContactos.get(posicion).size()<3){
+                num = lContactos.get(posicion).getTelefono(0);
+                num2 =lContactos.get(posicion).getTelefono(1);
+            }else {
+                num = lContactos.get(posicion).getTelefono(0);
+                num2 =lContactos.get(posicion).getTelefono(1);
+                num3 = lContactos.get(posicion).getTelefono(2);
+            }
+        }
+
+        etNome.setText(nom);
+        etNume.setText(num);
+        etNume2.setHint(num2);
+        etNume3.setHint(num3);
+
+        alert.setView(vista);
+        alert.setPositiveButton("Aceptar",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        int idd = (int) lContactos.get(posicion).getId();
+                        lContactos.remove(posicion);
+                        EditText etnom, etnum;
+                        ArrayList<String> telf = new ArrayList<String>();
+
+                        if (!(etNume.getText().toString().equals(""))) {
+                            telf.add(etNume.getText().toString());
+                        }
+                        if (!(etNume2.getText().toString().equals(""))) {
+                            telf.add(etNume2.getText().toString());
+                        }
+                        if (!(etNume3.getText().toString().equals(""))) {
+                            telf.add(etNume3.getText().toString());
+                        }
+                        Contacto c = new Contacto( etNome.getText().toString(),idd, telf);
+                        lContactos.add(c);//Añadirmos el contacto a la lista
+                        Log.v("INSERTO TLF", c.toString());
+                        ad.notifyDataSetChanged();
+                    }
+                });
+
+        alert.setView(vista);
+        alert.setNegativeButton("Cancelar", null);
+        alert.show();
+    }
 }
